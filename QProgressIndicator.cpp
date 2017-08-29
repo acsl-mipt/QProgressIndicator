@@ -32,7 +32,9 @@ QProgressIndicator::QProgressIndicator(QWidget* parent)
       m_timerId(-1),
       m_delay(40),
       m_displayedWhenStopped(false),
-      m_color(Qt::black)
+      m_color(Qt::black),
+      m_innerRadiusFactor(0.5),
+      m_widthFactor(1.2)
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     setFocusPolicy(Qt::NoFocus);
@@ -91,6 +93,34 @@ void QProgressIndicator::setColor(const QColor & color)
     update();
 }
 
+void QProgressIndicator::setInnerRadiusFactor(qreal factor)
+{
+    if(factor < 0.25)
+        factor = 0.25;
+    else if(factor > 0.8)
+        factor = 0.8;
+
+    if(m_innerRadiusFactor != factor)
+    {
+        m_innerRadiusFactor = factor;
+        update();
+    }
+}
+
+void QProgressIndicator::setWidthFactor(qreal factor)
+{
+    if(factor < 0.5)
+        factor = 0.5;
+    else if(factor > 4.0)
+        factor = 4.0;
+
+    if(m_widthFactor != factor)
+    {
+        m_widthFactor = factor;
+        update();
+    }
+}
+
 QSize QProgressIndicator::sizeHint() const
 {
     return QSize(20,20);
@@ -114,15 +144,16 @@ void QProgressIndicator::paintEvent(QPaintEvent * /*event*/)
         return;
 
     int width = qMin(this->width(), this->height());
-    
+
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
-    
-    int outerRadius = (width-1)*0.5;
-    int innerRadius = (width-1)*0.5*0.38;
+
+    int outerRadius = (width - 1) * 0.5;
+    int innerRadius = (width - 1) * 0.5 * m_innerRadiusFactor;
 
     int capsuleHeight = outerRadius - innerRadius;
     int capsuleWidth  = (width > 32 ) ? capsuleHeight *.23 : capsuleHeight *.35;
+    capsuleWidth *= m_widthFactor;
     int capsuleRadius = capsuleWidth/2;
 
     for (int i=0; i<12; i++)
@@ -130,7 +161,7 @@ void QProgressIndicator::paintEvent(QPaintEvent * /*event*/)
         QColor color = m_color;
         color.setAlphaF(1.0f - (i/12.0f));
         p.setPen(Qt::NoPen);
-        p.setBrush(color);       
+        p.setBrush(color);
         p.save();
         p.translate(rect().center());
         p.rotate(m_angle - i*30.0f);
